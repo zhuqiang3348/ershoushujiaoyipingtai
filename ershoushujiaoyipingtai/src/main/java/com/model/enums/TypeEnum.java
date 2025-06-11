@@ -2,12 +2,10 @@ package com.model.enums;
 
 import java.io.Serializable;
 
-import com.baomidou.mybatisplus.enums.IEnum;
-
 /**
  * 必须现在 IEnum 配置 该包扫描自动注入，查看文件 spring-mybatis.xml 参数 typeEnumsPackage
  */
-public enum TypeEnum implements IEnum {
+public enum TypeEnum {
     DISABLED(0, "禁用"),
     NORMAL(1, "正常");
 
@@ -19,8 +17,7 @@ public enum TypeEnum implements IEnum {
         this.desc = desc;
     }
 
-    @Override
-    public Serializable getValue() {
+    public int getValue() {
         return this.value;
     }
 

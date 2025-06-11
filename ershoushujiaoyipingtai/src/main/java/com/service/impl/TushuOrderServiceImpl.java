@@ -4,12 +4,11 @@ import com.utils.StringUtil;
 import org.springframework.stereotype.Service;
 import java.lang.reflect.Field;
 import java.util.*;
-import com.baomidou.mybatisplus.plugins.Page;
-import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 import com.utils.PageUtils;
 import com.utils.Query;
-import org.springframework.web.context.ContextLoader;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import com.dao.TushuOrderDao;
@@ -30,10 +29,18 @@ public class TushuOrderServiceImpl extends ServiceImpl<TushuOrderDao, TushuOrder
             params.put("page","1");
             params.put("limit","10");
         }
-        Page<TushuOrderView> page =new Query<TushuOrderView>(params).getPage();
-        page.setRecords(baseMapper.selectListView(page,params));
-        return new PageUtils(page);
+        // 1. 必须用 TushuOrderEntity 泛型分页对象
+        Page<TushuOrderEntity> entityPage = new Query<TushuOrderEntity>(params).getPage();
+        // 2. 查出 View 列表
+        List<TushuOrderView> viewList = baseMapper.selectListView(entityPage, params);
+        // 3. 组装成 Page<TushuOrderView>
+        Page<TushuOrderView> viewPage = new Page<>();
+        viewPage.setRecords(viewList);
+        viewPage.setTotal(entityPage.getTotal());
+        viewPage.setSize(entityPage.getSize());
+        viewPage.setCurrent(entityPage.getCurrent());
+        viewPage.setPages(entityPage.getPages());
+        // 4. 返回 PageUtils
+        return new PageUtils(viewPage);
     }
-
-
 }

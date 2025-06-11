@@ -2,27 +2,27 @@ package com.entity;
 
 import java.io.Serializable;
 
-import com.baomidou.mybatisplus.annotations.TableId;
-import com.baomidou.mybatisplus.annotations.TableName;
-import com.baomidou.mybatisplus.enums.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.IdType;
 
 /**
-* @author yangliyuan
-* @version 创建时间：2020年2月7日 下午8:36:05
-* 类说明 : 
-*/
+ * @author yangliyuan
+ * @version 创建时间：2020年2月7日 下午8:36:05
+ * 类说明 :
+ */
 @TableName("config")
 public class ConfigEntity implements Serializable{
-private static final long serialVersionUID = 1L;
-	
+	private static final long serialVersionUID = 1L;
+
 	@TableId(type = IdType.AUTO)
 	private Long id;
-	
+
 	/**
 	 * key
 	 */
 	private String name;
-	
+
 	/**
 	 * value
 	 */
@@ -51,5 +51,4 @@ private static final long serialVersionUID = 1L;
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
 }

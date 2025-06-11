@@ -1,4 +1,3 @@
-
 package com.controller;
 
 import java.io.File;
@@ -9,7 +8,6 @@ import com.alibaba.fastjson.JSONObject;
 import java.util.*;
 import org.springframework.beans.BeanUtils;
 import javax.servlet.http.HttpServletRequest;
-import org.springframework.web.context.ContextLoader;
 import javax.servlet.ServletContext;
 import com.service.TokenService;
 import com.utils.*;
@@ -23,8 +21,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
-import com.baomidou.mybatisplus.mapper.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.entity.*;
 import com.entity.view.*;
 import com.service.*;
@@ -37,7 +35,7 @@ import com.alibaba.fastjson.*;
  * 后端接口
  * @author
  * @email
-*/
+ */
 @RestController
 @Controller
 @RequestMapping("/yonghu")
@@ -47,19 +45,14 @@ public class YonghuController {
     @Autowired
     private YonghuService yonghuService;
 
-
     @Autowired
     private TokenService tokenService;
     @Autowired
     private DictionaryService dictionaryService;
 
-    //级联表service
-
-
-
     /**
-    * 后端列表
-    */
+     * 后端列表
+     */
     @RequestMapping("/page")
     public R page(@RequestParam Map<String, Object> params, HttpServletRequest request){
         logger.debug("page方法:,,Controller:{},,params:{}",this.getClass().getName(),JSONObject.toJSONString(params));
@@ -73,61 +66,53 @@ public class YonghuController {
         }
         PageUtils page = yonghuService.queryPage(params);
 
-        //字典表数据转换
         List<YonghuView> list =(List<YonghuView>)page.getList();
         for(YonghuView c:list){
-            //修改对应字典表字段
             dictionaryService.dictionaryConvert(c, request);
         }
         return R.ok().put("data", page);
     }
 
     /**
-    * 后端详情
-    */
+     * 后端详情
+     */
     @RequestMapping("/info/{id}")
     public R info(@PathVariable("id") Long id, HttpServletRequest request){
         logger.debug("info方法:,,Controller:{},,id:{}",this.getClass().getName(),id);
-        YonghuEntity yonghu = yonghuService.selectById(id);
+        YonghuEntity yonghu = yonghuService.getById(id);
         if(yonghu !=null){
-            //entity转view
             YonghuView view = new YonghuView();
-            BeanUtils.copyProperties( yonghu , view );//把实体数据重构到view中
-
-            //修改对应字典表字段
+            BeanUtils.copyProperties( yonghu , view );
             dictionaryService.dictionaryConvert(view, request);
             return R.ok().put("data", view);
         }else {
             return R.error(511,"查不到数据");
         }
-
     }
 
     /**
-    * 后端保存
-    */
+     * 后端保存
+     */
     @RequestMapping("/save")
     public R save(@RequestBody YonghuEntity yonghu, HttpServletRequest request){
         logger.debug("save方法:,,Controller:{},,yonghu:{}",this.getClass().getName(),yonghu.toString());
-
         String role = String.valueOf(request.getSession().getAttribute("role"));
         if(false)
             return R.error(511,"永远不会进入");
 
-        Wrapper<YonghuEntity> queryWrapper = new EntityWrapper<YonghuEntity>()
-            .eq("username", yonghu.getUsername())
-            .or()
-            .eq("yonghu_phone", yonghu.getYonghuPhone())
-            .or()
-            .eq("yonghu_id_number", yonghu.getYonghuIdNumber())
-            ;
+        Wrapper<YonghuEntity> queryWrapper = new QueryWrapper<YonghuEntity>()
+                .eq("username", yonghu.getUsername())
+                .or()
+                .eq("yonghu_phone", yonghu.getYonghuPhone())
+                .or()
+                .eq("yonghu_id_number", yonghu.getYonghuIdNumber());
 
-        logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        YonghuEntity yonghuEntity = yonghuService.selectOne(queryWrapper);
+        logger.info("sql语句:"+queryWrapper);
+        YonghuEntity yonghuEntity = yonghuService.getOne(queryWrapper);
         if(yonghuEntity==null){
             yonghu.setCreateTime(new Date());
             yonghu.setPassword("123456");
-            yonghuService.insert(yonghu);
+            yonghuService.save(yonghu);
             return R.ok();
         }else {
             return R.error(511,"账户或者用户手机号或者用户身份证号已经被使用");
@@ -135,33 +120,30 @@ public class YonghuController {
     }
 
     /**
-    * 后端修改
-    */
+     * 后端修改
+     */
     @RequestMapping("/update")
     public R update(@RequestBody YonghuEntity yonghu, HttpServletRequest request){
         logger.debug("update方法:,,Controller:{},,yonghu:{}",this.getClass().getName(),yonghu.toString());
 
         String role = String.valueOf(request.getSession().getAttribute("role"));
-//        if(false)
-//            return R.error(511,"永远不会进入");
-        //根据字段查询是否有相同数据
-        Wrapper<YonghuEntity> queryWrapper = new EntityWrapper<YonghuEntity>()
-            .notIn("id",yonghu.getId())
-            .andNew()
-            .eq("username", yonghu.getUsername())
-            .or()
-            .eq("yonghu_phone", yonghu.getYonghuPhone())
-            .or()
-            .eq("yonghu_id_number", yonghu.getYonghuIdNumber())
-            ;
+        Wrapper<YonghuEntity> queryWrapper = new QueryWrapper<YonghuEntity>()
+                .ne("id",yonghu.getId())
+                .and(wrapper -> wrapper
+                        .eq("username", yonghu.getUsername())
+                        .or()
+                        .eq("yonghu_phone", yonghu.getYonghuPhone())
+                        .or()
+                        .eq("yonghu_id_number", yonghu.getYonghuIdNumber())
+                );
 
-        logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        YonghuEntity yonghuEntity = yonghuService.selectOne(queryWrapper);
+        logger.info("sql语句:"+queryWrapper);
+        YonghuEntity yonghuEntity = yonghuService.getOne(queryWrapper);
         if("".equals(yonghu.getYonghuPhoto()) || "null".equals(yonghu.getYonghuPhoto())){
-                yonghu.setYonghuPhoto(null);
+            yonghu.setYonghuPhoto(null);
         }
         if(yonghuEntity==null){
-            yonghuService.updateById(yonghu);//根据id更新
+            yonghuService.updateById(yonghu);
             return R.ok();
         }else {
             return R.error(511,"账户或者用户手机号或者用户身份证号已经被使用");
@@ -169,15 +151,14 @@ public class YonghuController {
     }
 
     /**
-    * 删除
-    */
+     * 删除
+     */
     @RequestMapping("/delete")
     public R delete(@RequestBody Integer[] ids){
-        logger.debug("delete:,,Controller:{},,ids:{}",this.getClass().getName(),ids.toString());
-        yonghuService.deleteBatchIds(Arrays.asList(ids));
+        logger.debug("delete:,,Controller:{},,ids:{}",this.getClass().getName(),Arrays.toString(ids));
+        yonghuService.removeByIds(Arrays.asList(ids));
         return R.ok();
     }
-
 
     /**
      * 批量上传
@@ -186,8 +167,8 @@ public class YonghuController {
     public R save( String fileName){
         logger.debug("batchInsert方法:,,Controller:{},,fileName:{}",this.getClass().getName(),fileName);
         try {
-            List<YonghuEntity> yonghuList = new ArrayList<>();//上传的东西
-            Map<String, List<String>> seachFields= new HashMap<>();//要查询的字段
+            List<YonghuEntity> yonghuList = new ArrayList<>();
+            Map<String, List<String>> seachFields= new HashMap<>();
             Date date = new Date();
             int lastIndexOf = fileName.lastIndexOf(".");
             if(lastIndexOf == -1){
@@ -197,62 +178,42 @@ public class YonghuController {
                 if(!".xls".equals(suffix)){
                     return R.error(511,"只支持后缀为xls的excel文件");
                 }else{
-                    URL resource = this.getClass().getClassLoader().getResource("static/upload/" + fileName);//获取文件路径
+                    URL resource = this.getClass().getClassLoader().getResource("static/upload/" + fileName);
                     File file = new File(resource.getFile());
                     if(!file.exists()){
                         return R.error(511,"找不到上传文件，请联系管理员");
                     }else{
-                        List<List<String>> dataList = PoiUtil.poiImport(file.getPath());//读取xls文件
-                        dataList.remove(0);//删除第一行，因为第一行是提示
+                        List<List<String>> dataList = PoiUtil.poiImport(file.getPath());
+                        dataList.remove(0);
                         for(List<String> data:dataList){
-                            //循环
                             YonghuEntity yonghuEntity = new YonghuEntity();
-//                            yonghuEntity.setUsername(data.get(0));                    //账户 要改的
-//                            //yonghuEntity.setPassword("123456");//密码
-//                            yonghuEntity.setYonghuName(data.get(0));                    //用户姓名 要改的
-//                            yonghuEntity.setYonghuPhone(data.get(0));                    //用户手机号 要改的
-//                            yonghuEntity.setYonghuIdNumber(data.get(0));                    //用户身份证号 要改的
-//                            yonghuEntity.setYonghuPhoto("");//照片
-//                            yonghuEntity.setSexTypes(Integer.valueOf(data.get(0)));   //性别 要改的
-//                            yonghuEntity.setYonghuEmail(data.get(0));                    //电子邮箱 要改的
-//                            yonghuEntity.setNewMoney(data.get(0));                    //余额 要改的
-//                            yonghuEntity.setCreateTime(date);//时间
                             yonghuList.add(yonghuEntity);
-
-
-                            //把要查询是否重复的字段放入map中
-                                //账户
-                                if(seachFields.containsKey("username")){
-                                    List<String> username = seachFields.get("username");
-                                    username.add(data.get(0));//要改的
-                                }else{
-                                    List<String> username = new ArrayList<>();
-                                    username.add(data.get(0));//要改的
-                                    seachFields.put("username",username);
-                                }
-                                //用户手机号
-                                if(seachFields.containsKey("yonghuPhone")){
-                                    List<String> yonghuPhone = seachFields.get("yonghuPhone");
-                                    yonghuPhone.add(data.get(0));//要改的
-                                }else{
-                                    List<String> yonghuPhone = new ArrayList<>();
-                                    yonghuPhone.add(data.get(0));//要改的
-                                    seachFields.put("yonghuPhone",yonghuPhone);
-                                }
-                                //用户身份证号
-                                if(seachFields.containsKey("yonghuIdNumber")){
-                                    List<String> yonghuIdNumber = seachFields.get("yonghuIdNumber");
-                                    yonghuIdNumber.add(data.get(0));//要改的
-                                }else{
-                                    List<String> yonghuIdNumber = new ArrayList<>();
-                                    yonghuIdNumber.add(data.get(0));//要改的
-                                    seachFields.put("yonghuIdNumber",yonghuIdNumber);
-                                }
+                            if(seachFields.containsKey("username")){
+                                List<String> username = seachFields.get("username");
+                                username.add(data.get(0));
+                            }else{
+                                List<String> username = new ArrayList<>();
+                                username.add(data.get(0));
+                                seachFields.put("username",username);
+                            }
+                            if(seachFields.containsKey("yonghuPhone")){
+                                List<String> yonghuPhone = seachFields.get("yonghuPhone");
+                                yonghuPhone.add(data.get(0));
+                            }else{
+                                List<String> yonghuPhone = new ArrayList<>();
+                                yonghuPhone.add(data.get(0));
+                                seachFields.put("yonghuPhone",yonghuPhone);
+                            }
+                            if(seachFields.containsKey("yonghuIdNumber")){
+                                List<String> yonghuIdNumber = seachFields.get("yonghuIdNumber");
+                                yonghuIdNumber.add(data.get(0));
+                            }else{
+                                List<String> yonghuIdNumber = new ArrayList<>();
+                                yonghuIdNumber.add(data.get(0));
+                                seachFields.put("yonghuIdNumber",yonghuIdNumber);
+                            }
                         }
-
-                        //查询是否重复
-                         //账户
-                        List<YonghuEntity> yonghuEntities_username = yonghuService.selectList(new EntityWrapper<YonghuEntity>().in("username", seachFields.get("username")));
+                        List<YonghuEntity> yonghuEntities_username = yonghuService.list(new QueryWrapper<YonghuEntity>().in("username", seachFields.get("username")));
                         if(yonghuEntities_username.size() >0 ){
                             ArrayList<String> repeatFields = new ArrayList<>();
                             for(YonghuEntity s:yonghuEntities_username){
@@ -260,8 +221,7 @@ public class YonghuController {
                             }
                             return R.error(511,"数据库的该表中的 [账户] 字段已经存在 存在数据为:"+repeatFields.toString());
                         }
-                         //用户手机号
-                        List<YonghuEntity> yonghuEntities_yonghuPhone = yonghuService.selectList(new EntityWrapper<YonghuEntity>().in("yonghu_phone", seachFields.get("yonghuPhone")));
+                        List<YonghuEntity> yonghuEntities_yonghuPhone = yonghuService.list(new QueryWrapper<YonghuEntity>().in("yonghu_phone", seachFields.get("yonghuPhone")));
                         if(yonghuEntities_yonghuPhone.size() >0 ){
                             ArrayList<String> repeatFields = new ArrayList<>();
                             for(YonghuEntity s:yonghuEntities_yonghuPhone){
@@ -269,8 +229,7 @@ public class YonghuController {
                             }
                             return R.error(511,"数据库的该表中的 [用户手机号] 字段已经存在 存在数据为:"+repeatFields.toString());
                         }
-                         //用户身份证号
-                        List<YonghuEntity> yonghuEntities_yonghuIdNumber = yonghuService.selectList(new EntityWrapper<YonghuEntity>().in("yonghu_id_number", seachFields.get("yonghuIdNumber")));
+                        List<YonghuEntity> yonghuEntities_yonghuIdNumber = yonghuService.list(new QueryWrapper<YonghuEntity>().in("yonghu_id_number", seachFields.get("yonghuIdNumber")));
                         if(yonghuEntities_yonghuIdNumber.size() >0 ){
                             ArrayList<String> repeatFields = new ArrayList<>();
                             for(YonghuEntity s:yonghuEntities_yonghuIdNumber){
@@ -278,7 +237,7 @@ public class YonghuController {
                             }
                             return R.error(511,"数据库的该表中的 [用户身份证号] 字段已经存在 存在数据为:"+repeatFields.toString());
                         }
-                        yonghuService.insertBatch(yonghuList);
+                        yonghuService.saveBatch(yonghuList);
                         return R.ok();
                     }
                 }
@@ -288,21 +247,15 @@ public class YonghuController {
         }
     }
 
-
     /**
-    * 登录
-    */
+     * 登录
+     */
     @IgnoreAuth
     @RequestMapping(value = "/login")
     public R login(String username, String password, String captcha, HttpServletRequest request) {
-        YonghuEntity yonghu = yonghuService.selectOne(new EntityWrapper<YonghuEntity>().eq("username", username));
+        YonghuEntity yonghu = yonghuService.getOne(new QueryWrapper<YonghuEntity>().eq("username", username));
         if(yonghu==null || !yonghu.getPassword().equals(password))
             return R.error("账号或密码不正确");
-        //  // 获取监听器中的字典表
-        // ServletContext servletContext = ContextLoader.getCurrentWebApplicationContext().getServletContext();
-        // Map<String, Map<Integer, String>> dictionaryMap= (Map<String, Map<Integer, String>>) servletContext.getAttribute("dictionaryMap");
-        // Map<Integer, String> role_types = dictionaryMap.get("role_types");
-        // role_types.get(.getRoleTypes());
         String token = tokenService.generateToken(yonghu.getId(),username, "yonghu", "用户");
         R r = R.ok();
         r.put("token", token);
@@ -314,25 +267,23 @@ public class YonghuController {
     }
 
     /**
-    * 注册
-    */
+     * 注册
+     */
     @IgnoreAuth
     @PostMapping(value = "/register")
     public R register(@RequestBody YonghuEntity yonghu){
-//    	ValidatorUtils.validateEntity(user);
-        Wrapper<YonghuEntity> queryWrapper = new EntityWrapper<YonghuEntity>()
-            .eq("username", yonghu.getUsername())
-            .or()
-            .eq("yonghu_phone", yonghu.getYonghuPhone())
-            .or()
-            .eq("yonghu_id_number", yonghu.getYonghuIdNumber())
-            ;
-        YonghuEntity yonghuEntity = yonghuService.selectOne(queryWrapper);
+        Wrapper<YonghuEntity> queryWrapper = new QueryWrapper<YonghuEntity>()
+                .eq("username", yonghu.getUsername())
+                .or()
+                .eq("yonghu_phone", yonghu.getYonghuPhone())
+                .or()
+                .eq("yonghu_id_number", yonghu.getYonghuIdNumber());
+        YonghuEntity yonghuEntity = yonghuService.getOne(queryWrapper);
         if(yonghuEntity != null)
             return R.error("账户或者用户手机号或者用户身份证号已经被使用");
         yonghu.setNewMoney(0.0);
         yonghu.setCreateTime(new Date());
-        yonghuService.insert(yonghu);
+        yonghuService.save(yonghu);
         return R.ok();
     }
 
@@ -348,40 +299,35 @@ public class YonghuController {
         return R.ok();
     }
 
-
     /**
      * 忘记密码
      */
     @IgnoreAuth
     @RequestMapping(value = "/resetPass")
     public R resetPass(String username, HttpServletRequest request) {
-        YonghuEntity yonghu = yonghuService.selectOne(new EntityWrapper<YonghuEntity>().eq("username", username));
+        YonghuEntity yonghu = yonghuService.getOne(new QueryWrapper<YonghuEntity>().eq("username", username));
         if(yonghu!=null){
             yonghu.setPassword("123456");
             boolean b = yonghuService.updateById(yonghu);
             if(!b){
-               return R.error();
+                return R.error();
             }
         }else{
-           return R.error("账号不存在");
+            return R.error("账号不存在");
         }
         return R.ok();
     }
 
-
     /**
-    * 获取用户的session用户信息
-    */
+     * 获取用户的session用户信息
+     */
     @RequestMapping("/session")
     public R getCurrYonghu(HttpServletRequest request){
         Integer id = (Integer)request.getSession().getAttribute("userId");
-        YonghuEntity yonghu = yonghuService.selectById(id);
+        YonghuEntity yonghu = yonghuService.getById(id);
         if(yonghu !=null){
-            //entity转view
             YonghuView view = new YonghuView();
-            BeanUtils.copyProperties( yonghu , view );//把实体数据重构到view中
-
-            //修改对应字典表字段
+            BeanUtils.copyProperties( yonghu , view );
             dictionaryService.dictionaryConvert(view, request);
             return R.ok().put("data", view);
         }else {
@@ -389,87 +335,70 @@ public class YonghuController {
         }
     }
 
-
     /**
-    * 退出
-    */
+     * 退出
+     */
     @GetMapping(value = "logout")
     public R logout(HttpServletRequest request) {
         request.getSession().invalidate();
         return R.ok("退出成功");
     }
 
-
-
-
     /**
-    * 前端列表
-    */
+     * 前端列表
+     */
     @IgnoreAuth
     @RequestMapping("/list")
     public R list(@RequestParam Map<String, Object> params, HttpServletRequest request){
         logger.debug("list方法:,,Controller:{},,params:{}",this.getClass().getName(),JSONObject.toJSONString(params));
-
-        // 没有指定排序字段就默认id倒序
         if(StringUtil.isEmpty(String.valueOf(params.get("orderBy")))){
             params.put("orderBy","id");
         }
         PageUtils page = yonghuService.queryPage(params);
-
-        //字典表数据转换
         List<YonghuView> list =(List<YonghuView>)page.getList();
         for(YonghuView c:list)
-            dictionaryService.dictionaryConvert(c, request); //修改对应字典表字段
+            dictionaryService.dictionaryConvert(c, request);
         return R.ok().put("data", page);
     }
 
     /**
-    * 前端详情
-    */
+     * 前端详情
+     */
     @RequestMapping("/detail/{id}")
     public R detail(@PathVariable("id") Long id, HttpServletRequest request){
         logger.debug("detail方法:,,Controller:{},,id:{}",this.getClass().getName(),id);
-        YonghuEntity yonghu = yonghuService.selectById(id);
-            if(yonghu !=null){
-
-
-                //entity转view
-                YonghuView view = new YonghuView();
-                BeanUtils.copyProperties( yonghu , view );//把实体数据重构到view中
-
-                //修改对应字典表字段
-                dictionaryService.dictionaryConvert(view, request);
-                return R.ok().put("data", view);
-            }else {
-                return R.error(511,"查不到数据");
-            }
+        YonghuEntity yonghu = yonghuService.getById(id);
+        if(yonghu !=null){
+            YonghuView view = new YonghuView();
+            BeanUtils.copyProperties( yonghu , view );
+            dictionaryService.dictionaryConvert(view, request);
+            return R.ok().put("data", view);
+        }else {
+            return R.error(511,"查不到数据");
+        }
     }
 
-
     /**
-    * 前端保存
-    */
+     * 前端保存
+     */
     @RequestMapping("/add")
     public R add(@RequestBody YonghuEntity yonghu, HttpServletRequest request){
         logger.debug("add方法:,,Controller:{},,yonghu:{}",this.getClass().getName(),yonghu.toString());
-        Wrapper<YonghuEntity> queryWrapper = new EntityWrapper<YonghuEntity>()
-            .eq("username", yonghu.getUsername())
-            .or()
-            .eq("yonghu_phone", yonghu.getYonghuPhone())
-            .or()
-            .eq("yonghu_id_number", yonghu.getYonghuIdNumber())
-            ;
-        logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        YonghuEntity yonghuEntity = yonghuService.selectOne(queryWrapper);
+        Wrapper<YonghuEntity> queryWrapper = new QueryWrapper<YonghuEntity>()
+                .eq("username", yonghu.getUsername())
+                .or()
+                .eq("yonghu_phone", yonghu.getYonghuPhone())
+                .or()
+                .eq("yonghu_id_number", yonghu.getYonghuIdNumber());
+        logger.info("sql语句:"+queryWrapper);
+        YonghuEntity yonghuEntity = yonghuService.getOne(queryWrapper);
         if(yonghuEntity==null){
             yonghu.setCreateTime(new Date());
-        yonghu.setPassword("123456");
-        yonghuService.insert(yonghu);
+            yonghu.setPassword("123456");
+            yonghuService.save(yonghu);
             return R.ok();
         }else {
             return R.error(511,"账户或者用户手机号或者用户身份证号已经被使用");
         }
     }
-
-
 }

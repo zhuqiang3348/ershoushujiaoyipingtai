@@ -1,17 +1,13 @@
 package com.service.impl;
 
-import com.utils.StringUtil;
 import org.springframework.stereotype.Service;
-import java.lang.reflect.Field;
+import org.springframework.beans.BeanUtils;
 import java.util.*;
-import com.baomidou.mybatisplus.plugins.Page;
-import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 import com.utils.PageUtils;
 import com.utils.Query;
-import org.springframework.web.context.ContextLoader;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import com.dao.AddressDao;
 import com.entity.AddressEntity;
 import com.service.AddressService;
@@ -30,10 +26,18 @@ public class AddressServiceImpl extends ServiceImpl<AddressDao, AddressEntity> i
             params.put("page","1");
             params.put("limit","10");
         }
-        Page<AddressView> page =new Query<AddressView>(params).getPage();
-        page.setRecords(baseMapper.selectListView(page,params));
-        return new PageUtils(page);
+        // 必须用 AddressEntity 分页对象
+        Page<AddressEntity> entityPage = new Query<AddressEntity>(params).getPage();
+        List<AddressView> viewList = baseMapper.selectListView(entityPage, params);
+
+        // 组装成新的 Page<AddressView>
+        Page<AddressView> viewPage = new Page<>();
+        viewPage.setRecords(viewList);
+        viewPage.setTotal(entityPage.getTotal());
+        viewPage.setSize(entityPage.getSize());
+        viewPage.setCurrent(entityPage.getCurrent());
+        viewPage.setPages(entityPage.getPages());
+
+        return new PageUtils(viewPage);
     }
-
-
 }

@@ -1,4 +1,3 @@
-
 package com.utils;
 
 import java.util.LinkedHashMap;
@@ -6,13 +5,13 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.baomidou.mybatisplus.plugins.Page;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
 /**
  * 查询参数
  */
 public class Query<T> extends LinkedHashMap<String, Object> {
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     /**
      * mybatis-plus分页参数
      */
@@ -27,7 +26,7 @@ public class Query<T> extends LinkedHashMap<String, Object> {
     private int limit = 10;
 
     public Query(JQPageInfo pageInfo) {
-    	//分页参数
+        //分页参数
         if(pageInfo.getPage()!= null){
             currPage = pageInfo.getPage();
         }
@@ -35,23 +34,19 @@ public class Query<T> extends LinkedHashMap<String, Object> {
             limit = pageInfo.getLimit();
         }
 
-    
         //防止SQL注入（因为sidx、order是通过拼接SQL实现排序的，会有SQL注入风险）
         String sidx = SQLFilter.sqlInject(pageInfo.getSidx());
         String order = SQLFilter.sqlInject(pageInfo.getOrder());
-        
 
         //mybatis-plus分页
         this.page = new Page<>(currPage, limit);
 
-        //排序
-        if(StringUtils.isNotBlank(sidx) && StringUtils.isNotBlank(order)){
-            this.page.setOrderByField(sidx);
-            this.page.setAsc("ASC".equalsIgnoreCase(order));
-        }
+        //排序参数可以存下来，但不能直接设置到Page对象了
+        //this.page.setOrderByField(sidx);
+        //this.page.setAsc("ASC".equalsIgnoreCase(order));
     }
-    
-    
+
+
     public Query(Map<String, Object> params){
         this.putAll(params);
 
@@ -76,12 +71,9 @@ public class Query<T> extends LinkedHashMap<String, Object> {
         //mybatis-plus分页
         this.page = new Page<>(currPage, limit);
 
-        //排序
-        if(StringUtils.isNotBlank(sidx) && StringUtils.isNotBlank(order)){
-            this.page.setOrderByField(sidx);
-            this.page.setAsc("ASC".equalsIgnoreCase(order));
-        }
-
+        //排序参数可以存下来，但不能直接设置到Page对象了
+        //this.page.setOrderByField(sidx);
+        //this.page.setAsc("ASC".equalsIgnoreCase(order));
     }
 
     public Page<T> getPage() {

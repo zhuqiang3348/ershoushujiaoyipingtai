@@ -1,4 +1,3 @@
-
 package com.controller;
 
 import java.io.File;
@@ -23,8 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
-import com.baomidou.mybatisplus.mapper.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.entity.*;
 import com.entity.view.*;
 import com.service.*;
@@ -37,9 +36,8 @@ import com.alibaba.fastjson.*;
  * 后端接口
  * @author
  * @email
-*/
+ */
 @RestController
-@Controller
 @RequestMapping("/address")
 public class AddressController {
     private static final Logger logger = LoggerFactory.getLogger(AddressController.class);
@@ -47,9 +45,9 @@ public class AddressController {
     @Autowired
     private AddressService addressService;
 
-
     @Autowired
     private TokenService tokenService;
+
     @Autowired
     private DictionaryService dictionaryService;
 
@@ -57,11 +55,9 @@ public class AddressController {
     @Autowired
     private YonghuService yonghuService;
 
-
-
     /**
-    * 后端列表
-    */
+     * 后端列表
+     */
     @RequestMapping("/page")
     public R page(@RequestParam Map<String, Object> params, HttpServletRequest request){
         logger.debug("page方法:,,Controller:{},,params:{}",this.getClass().getName(),JSONObject.toJSONString(params));
@@ -85,35 +81,34 @@ public class AddressController {
     }
 
     /**
-    * 后端详情
-    */
+     * 后端详情
+     */
     @RequestMapping("/info/{id}")
     public R info(@PathVariable("id") Long id, HttpServletRequest request){
         logger.debug("info方法:,,Controller:{},,id:{}",this.getClass().getName(),id);
-        AddressEntity address = addressService.selectById(id);
+        AddressEntity address = addressService.getById(id);
         if(address !=null){
             //entity转view
             AddressView view = new AddressView();
-            BeanUtils.copyProperties( address , view );//把实体数据重构到view中
+            BeanUtils.copyProperties(address, view);
 
-                //级联表
-                YonghuEntity yonghu = yonghuService.selectById(address.getYonghuId());
-                if(yonghu != null){
-                    BeanUtils.copyProperties( yonghu , view ,new String[]{ "id", "createTime", "insertTime", "updateTime"});//把级联的数据添加到view中,并排除id和创建时间字段
-                    view.setYonghuId(yonghu.getId());
-                }
+            //级联表
+            YonghuEntity yonghu = yonghuService.getById(address.getYonghuId());
+            if(yonghu != null){
+                BeanUtils.copyProperties(yonghu, view, new String[]{ "id", "createTime", "insertTime", "updateTime"});
+                view.setYonghuId(yonghu.getId());
+            }
             //修改对应字典表字段
             dictionaryService.dictionaryConvert(view, request);
             return R.ok().put("data", view);
         }else {
             return R.error(511,"查不到数据");
         }
-
     }
 
     /**
-    * 后端保存
-    */
+     * 后端保存
+     */
     @RequestMapping("/save")
     public R save(@RequestBody AddressEntity address, HttpServletRequest request){
         logger.debug("save方法:,,Controller:{},,address:{}",this.getClass().getName(),address.toString());
@@ -124,29 +119,28 @@ public class AddressController {
         else if("用户".equals(role))
             address.setYonghuId(Integer.valueOf(String.valueOf(request.getSession().getAttribute("userId"))));
 
-        Wrapper<AddressEntity> queryWrapper = new EntityWrapper<AddressEntity>()
-            .eq("yonghu_id", address.getYonghuId())
-            .eq("address_name", address.getAddressName())
-            .eq("address_phone", address.getAddressPhone())
-            .eq("address_dizhi", address.getAddressDizhi())
-            .eq("isdefault_types", address.getIsdefaultTypes())
-            ;
+        Wrapper<AddressEntity> queryWrapper = new QueryWrapper<AddressEntity>()
+                .eq("yonghu_id", address.getYonghuId())
+                .eq("address_name", address.getAddressName())
+                .eq("address_phone", address.getAddressPhone())
+                .eq("address_dizhi", address.getAddressDizhi())
+                .eq("isdefault_types", address.getIsdefaultTypes());
 
-        logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        AddressEntity addressEntity = addressService.selectOne(queryWrapper);
+        logger.info("sql语句:"+((QueryWrapper)queryWrapper).getSqlSegment());
+        AddressEntity addressEntity = addressService.getOne(queryWrapper, false);
         if(addressEntity==null){
             address.setInsertTime(new Date());
             address.setCreateTime(new Date());
             Integer isdefaultTypes = address.getIsdefaultTypes();
             if(isdefaultTypes == 2 ){//如果当前的是默认地址，把当前用户的其他改为不是默认地址
-                List<AddressEntity> addressEntitys = addressService.selectList(new EntityWrapper<AddressEntity>().eq("isdefault_types",2));
+                List<AddressEntity> addressEntitys = addressService.list(new QueryWrapper<AddressEntity>().eq("isdefault_types",2));
                 if(addressEntitys != null && addressEntitys.size()>0){
                     for(AddressEntity a:addressEntitys)
                         a.setIsdefaultTypes(1);
                     addressService.updateBatchById(addressEntitys);
                 }
             }
-            addressService.insert(address);
+            addressService.save(address);
             return R.ok();
         }else {
             return R.error(511,"表中有相同数据");
@@ -154,35 +148,33 @@ public class AddressController {
     }
 
     /**
-    * 后端修改
-    */
+     * 后端修改
+     */
     @RequestMapping("/update")
     public R update(@RequestBody AddressEntity address, HttpServletRequest request){
         logger.debug("update方法:,,Controller:{},,address:{}",this.getClass().getName(),address.toString());
 
         String role = String.valueOf(request.getSession().getAttribute("role"));
-//        if(false)
-//            return R.error(511,"永远不会进入");
-//        else if("用户".equals(role))
-//            address.setYonghuId(Integer.valueOf(String.valueOf(request.getSession().getAttribute("userId"))));
+        //if(false)
+        //    return R.error(511,"永远不会进入");
+        //else if("用户".equals(role))
+        //    address.setYonghuId(Integer.valueOf(String.valueOf(request.getSession().getAttribute("userId"))));
         //根据字段查询是否有相同数据
-        Wrapper<AddressEntity> queryWrapper = new EntityWrapper<AddressEntity>()
-            .notIn("id",address.getId())
-            .andNew()
-            .eq("yonghu_id", address.getYonghuId())
-            .eq("address_name", address.getAddressName())
-            .eq("address_phone", address.getAddressPhone())
-            .eq("address_dizhi", address.getAddressDizhi())
-            .eq("isdefault_types", address.getIsdefaultTypes())
-            ;
+        Wrapper<AddressEntity> queryWrapper = new QueryWrapper<AddressEntity>()
+                .notIn("id",address.getId())
+                .eq("yonghu_id", address.getYonghuId())
+                .eq("address_name", address.getAddressName())
+                .eq("address_phone", address.getAddressPhone())
+                .eq("address_dizhi", address.getAddressDizhi())
+                .eq("isdefault_types", address.getIsdefaultTypes());
 
-        logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        AddressEntity addressEntity = addressService.selectOne(queryWrapper);
+        logger.info("sql语句:"+((QueryWrapper)queryWrapper).getSqlSegment());
+        AddressEntity addressEntity = addressService.getOne(queryWrapper, false);
         address.setUpdateTime(new Date());
         if(addressEntity==null){
             Integer isdefaultTypes = address.getIsdefaultTypes();
             if(isdefaultTypes == 2 ){//如果当前的是默认地址，把当前用户的其他改为不是默认地址
-                List<AddressEntity> addressEntitys = addressService.selectList(new EntityWrapper<AddressEntity>().eq("isdefault_types",2));
+                List<AddressEntity> addressEntitys = addressService.list(new QueryWrapper<AddressEntity>().eq("isdefault_types",2));
                 if(addressEntitys != null && addressEntitys.size()>0){
                     for(AddressEntity a:addressEntitys)
                         a.setIsdefaultTypes(1);
@@ -197,25 +189,24 @@ public class AddressController {
     }
 
     /**
-    * 删除
-    */
+     * 删除
+     */
     @RequestMapping("/delete")
     public R delete(@RequestBody Integer[] ids){
-        logger.debug("delete:,,Controller:{},,ids:{}",this.getClass().getName(),ids.toString());
-        addressService.deleteBatchIds(Arrays.asList(ids));
+        logger.debug("delete:,,Controller:{},,ids:{}",this.getClass().getName(),Arrays.toString(ids));
+        addressService.removeByIds(Arrays.asList(ids));
         return R.ok();
     }
-
 
     /**
      * 批量上传
      */
     @RequestMapping("/batchInsert")
-    public R save( String fileName){
+    public R save(String fileName){
         logger.debug("batchInsert方法:,,Controller:{},,fileName:{}",this.getClass().getName(),fileName);
         try {
-            List<AddressEntity> addressList = new ArrayList<>();//上传的东西
-            Map<String, List<String>> seachFields= new HashMap<>();//要查询的字段
+            List<AddressEntity> addressList = new ArrayList<>();
+            Map<String, List<String>> seachFields= new HashMap<>();
             Date date = new Date();
             int lastIndexOf = fileName.lastIndexOf(".");
             if(lastIndexOf == -1){
@@ -225,42 +216,31 @@ public class AddressController {
                 if(!".xls".equals(suffix)){
                     return R.error(511,"只支持后缀为xls的excel文件");
                 }else{
-                    URL resource = this.getClass().getClassLoader().getResource("static/upload/" + fileName);//获取文件路径
+                    URL resource = this.getClass().getClassLoader().getResource("static/upload/" + fileName);
                     File file = new File(resource.getFile());
                     if(!file.exists()){
                         return R.error(511,"找不到上传文件，请联系管理员");
                     }else{
-                        List<List<String>> dataList = PoiUtil.poiImport(file.getPath());//读取xls文件
+                        List<List<String>> dataList = PoiUtil.poiImport(file.getPath());
                         dataList.remove(0);//删除第一行，因为第一行是提示
                         for(List<String> data:dataList){
-                            //循环
                             AddressEntity addressEntity = new AddressEntity();
-//                            addressEntity.setYonghuId(Integer.valueOf(data.get(0)));   //创建用户 要改的
-//                            addressEntity.setAddressName(data.get(0));                    //收货人 要改的
-//                            addressEntity.setAddressPhone(data.get(0));                    //电话 要改的
-//                            addressEntity.setAddressDizhi(data.get(0));                    //地址 要改的
-//                            addressEntity.setIsdefaultTypes(Integer.valueOf(data.get(0)));   //是否默认地址 要改的
-//                            addressEntity.setInsertTime(date);//时间
-//                            addressEntity.setUpdateTime(new Date(data.get(0)));          //修改时间 要改的
-//                            addressEntity.setCreateTime(date);//时间
+                            // TODO: 补全数据填充逻辑
                             addressList.add(addressEntity);
 
-
                             //把要查询是否重复的字段放入map中
-                                //电话
-                                if(seachFields.containsKey("addressPhone")){
-                                    List<String> addressPhone = seachFields.get("addressPhone");
-                                    addressPhone.add(data.get(0));//要改的
-                                }else{
-                                    List<String> addressPhone = new ArrayList<>();
-                                    addressPhone.add(data.get(0));//要改的
-                                    seachFields.put("addressPhone",addressPhone);
-                                }
+                            if(seachFields.containsKey("addressPhone")){
+                                List<String> addressPhone = seachFields.get("addressPhone");
+                                addressPhone.add(data.get(0));//要改的
+                            }else{
+                                List<String> addressPhone = new ArrayList<>();
+                                addressPhone.add(data.get(0));//要改的
+                                seachFields.put("addressPhone",addressPhone);
+                            }
                         }
 
                         //查询是否重复
-                         //电话
-                        List<AddressEntity> addressEntities_addressPhone = addressService.selectList(new EntityWrapper<AddressEntity>().in("address_phone", seachFields.get("addressPhone")));
+                        List<AddressEntity> addressEntities_addressPhone = addressService.list(new QueryWrapper<AddressEntity>().in("address_phone", seachFields.get("addressPhone")));
                         if(addressEntities_addressPhone.size() >0 ){
                             ArrayList<String> repeatFields = new ArrayList<>();
                             for(AddressEntity s:addressEntities_addressPhone){
@@ -268,7 +248,7 @@ public class AddressController {
                             }
                             return R.error(511,"数据库的该表中的 [电话] 字段已经存在 存在数据为:"+repeatFields.toString());
                         }
-                        addressService.insertBatch(addressList);
+                        addressService.saveBatch(addressList);
                         return R.ok();
                     }
                 }
@@ -278,19 +258,13 @@ public class AddressController {
         }
     }
 
-
-
-
-
     /**
-    * 前端列表
-    */
+     * 前端列表
+     */
     @IgnoreAuth
     @RequestMapping("/list")
     public R list(@RequestParam Map<String, Object> params, HttpServletRequest request){
         logger.debug("list方法:,,Controller:{},,params:{}",this.getClass().getName(),JSONObject.toJSONString(params));
-
-        // 没有指定排序字段就默认id倒序
         if(StringUtil.isEmpty(String.valueOf(params.get("orderBy")))){
             params.put("orderBy","id");
         }
@@ -299,72 +273,64 @@ public class AddressController {
         //字典表数据转换
         List<AddressView> list =(List<AddressView>)page.getList();
         for(AddressView c:list)
-            dictionaryService.dictionaryConvert(c, request); //修改对应字典表字段
+            dictionaryService.dictionaryConvert(c, request);
         return R.ok().put("data", page);
     }
 
     /**
-    * 前端详情
-    */
+     * 前端详情
+     */
     @RequestMapping("/detail/{id}")
     public R detail(@PathVariable("id") Long id, HttpServletRequest request){
         logger.debug("detail方法:,,Controller:{},,id:{}",this.getClass().getName(),id);
-        AddressEntity address = addressService.selectById(id);
-            if(address !=null){
+        AddressEntity address = addressService.getById(id);
+        if(address !=null){
+            AddressView view = new AddressView();
+            BeanUtils.copyProperties(address, view);
 
-
-                //entity转view
-                AddressView view = new AddressView();
-                BeanUtils.copyProperties( address , view );//把实体数据重构到view中
-
-                //级联表
-                    YonghuEntity yonghu = yonghuService.selectById(address.getYonghuId());
-                if(yonghu != null){
-                    BeanUtils.copyProperties( yonghu , view ,new String[]{ "id", "createDate"});//把级联的数据添加到view中,并排除id和创建时间字段
-                    view.setYonghuId(yonghu.getId());
-                }
-                //修改对应字典表字段
-                dictionaryService.dictionaryConvert(view, request);
-                return R.ok().put("data", view);
-            }else {
-                return R.error(511,"查不到数据");
+            //级联表
+            YonghuEntity yonghu = yonghuService.getById(address.getYonghuId());
+            if(yonghu != null){
+                BeanUtils.copyProperties(yonghu, view, new String[]{ "id", "createDate"});
+                view.setYonghuId(yonghu.getId());
             }
+            dictionaryService.dictionaryConvert(view, request);
+            return R.ok().put("data", view);
+        }else {
+            return R.error(511,"查不到数据");
+        }
     }
 
-
     /**
-    * 前端保存
-    */
+     * 前端保存
+     */
     @RequestMapping("/add")
     public R add(@RequestBody AddressEntity address, HttpServletRequest request){
         logger.debug("add方法:,,Controller:{},,address:{}",this.getClass().getName(),address.toString());
-        Wrapper<AddressEntity> queryWrapper = new EntityWrapper<AddressEntity>()
-            .eq("yonghu_id", address.getYonghuId())
-            .eq("address_name", address.getAddressName())
-            .eq("address_phone", address.getAddressPhone())
-            .eq("address_dizhi", address.getAddressDizhi())
-            .eq("isdefault_types", address.getIsdefaultTypes())
-            ;
-        logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        AddressEntity addressEntity = addressService.selectOne(queryWrapper);
+        Wrapper<AddressEntity> queryWrapper = new QueryWrapper<AddressEntity>()
+                .eq("yonghu_id", address.getYonghuId())
+                .eq("address_name", address.getAddressName())
+                .eq("address_phone", address.getAddressPhone())
+                .eq("address_dizhi", address.getAddressDizhi())
+                .eq("isdefault_types", address.getIsdefaultTypes());
+        logger.info("sql语句:"+((QueryWrapper)queryWrapper).getSqlSegment());
+        AddressEntity addressEntity = addressService.getOne(queryWrapper, false);
         if(addressEntity==null){
             address.setInsertTime(new Date());
             address.setCreateTime(new Date());
             Integer isdefaultTypes = address.getIsdefaultTypes();
-            if(isdefaultTypes == 2 ){//如果当前的是默认地址，把当前用户的其他改为不是默认地址
-                List<AddressEntity> addressEntitys = addressService.selectList(new EntityWrapper<AddressEntity>().eq("isdefault_types",2));
+            if(isdefaultTypes == 2 ){
+                List<AddressEntity> addressEntitys = addressService.list(new QueryWrapper<AddressEntity>().eq("isdefault_types",2));
                 if(addressEntitys != null && addressEntitys.size()>0){
                     for(AddressEntity a:addressEntitys)
                         a.setIsdefaultTypes(1);
                     addressService.updateBatchById(addressEntitys);
                 }
             }
-        addressService.insert(address);
+            addressService.save(address);
             return R.ok();
         }else {
             return R.error(511,"表中有相同数据");
         }
     }
-
-
 }

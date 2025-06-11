@@ -1,4 +1,3 @@
-
 package com.controller;
 
 import java.io.File;
@@ -23,8 +22,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
-import com.baomidou.mybatisplus.mapper.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.entity.*;
 import com.entity.view.*;
 import com.service.*;
@@ -35,18 +34,14 @@ import com.alibaba.fastjson.*;
 /**
  * 购物车
  * 后端接口
- * @author
- * @email
-*/
+ */
 @RestController
-@Controller
 @RequestMapping("/cart")
 public class CartController {
     private static final Logger logger = LoggerFactory.getLogger(CartController.class);
 
     @Autowired
     private CartService cartService;
-
 
     @Autowired
     private TokenService tokenService;
@@ -59,11 +54,9 @@ public class CartController {
     @Autowired
     private YonghuService yonghuService;
 
-
-
     /**
-    * 后端列表
-    */
+     * 后端列表
+     */
     @RequestMapping("/page")
     public R page(@RequestParam Map<String, Object> params, HttpServletRequest request){
         logger.debug("page方法:,,Controller:{},,params:{}",this.getClass().getName(),JSONObject.toJSONString(params));
@@ -87,42 +80,41 @@ public class CartController {
     }
 
     /**
-    * 后端详情
-    */
+     * 后端详情
+     */
     @RequestMapping("/info/{id}")
     public R info(@PathVariable("id") Long id, HttpServletRequest request){
         logger.debug("info方法:,,Controller:{},,id:{}",this.getClass().getName(),id);
-        CartEntity cart = cartService.selectById(id);
+        CartEntity cart = cartService.getById(id);
         if(cart !=null){
             //entity转view
             CartView view = new CartView();
-            BeanUtils.copyProperties( cart , view );//把实体数据重构到view中
+            BeanUtils.copyProperties(cart, view);//把实体数据重构到view中
 
-                //级联表
-                TushuEntity tushu = tushuService.selectById(cart.getTushuId());
-                if(tushu != null){
-                    BeanUtils.copyProperties( tushu , view ,new String[]{ "id", "createTime", "insertTime", "updateTime", "yonghuId"});//把级联的数据添加到view中,并排除id和创建时间字段
-                    view.setTushuId(tushu.getId());
-                    view.setTushuYonghuId(tushu.getYonghuId());
-                }
-                //级联表
-                YonghuEntity yonghu = yonghuService.selectById(cart.getYonghuId());
-                if(yonghu != null){
-                    BeanUtils.copyProperties( yonghu , view ,new String[]{ "id", "createTime", "insertTime", "updateTime"});//把级联的数据添加到view中,并排除id和创建时间字段
-                    view.setYonghuId(yonghu.getId());
-                }
+            //级联表
+            TushuEntity tushu = tushuService.getById(cart.getTushuId());
+            if(tushu != null){
+                BeanUtils.copyProperties(tushu, view, new String[]{ "id", "createTime", "insertTime", "updateTime", "yonghuId"});//把级联的数据添加到view中,并排除id和创建时间字段
+                view.setTushuId(tushu.getId());
+                view.setTushuYonghuId(tushu.getYonghuId());
+            }
+            //级联表
+            YonghuEntity yonghu = yonghuService.getById(cart.getYonghuId());
+            if(yonghu != null){
+                BeanUtils.copyProperties(yonghu, view, new String[]{ "id", "createTime", "insertTime", "updateTime"});//把级联的数据添加到view中,并排除id和创建时间字段
+                view.setYonghuId(yonghu.getId());
+            }
             //修改对应字典表字段
             dictionaryService.dictionaryConvert(view, request);
             return R.ok().put("data", view);
         }else {
             return R.error(511,"查不到数据");
         }
-
     }
 
     /**
-    * 后端保存
-    */
+     * 后端保存
+     */
     @RequestMapping("/save")
     public R save(@RequestBody CartEntity cart, HttpServletRequest request){
         logger.debug("save方法:,,Controller:{},,cart:{}",this.getClass().getName(),cart.toString());
@@ -133,18 +125,17 @@ public class CartController {
         else if("用户".equals(role))
             cart.setYonghuId(Integer.valueOf(String.valueOf(request.getSession().getAttribute("userId"))));
 
-        Wrapper<CartEntity> queryWrapper = new EntityWrapper<CartEntity>()
-            .eq("yonghu_id", cart.getYonghuId())
-            .eq("tushu_id", cart.getTushuId())
-            .eq("buy_number", cart.getBuyNumber())
-            ;
+        Wrapper<CartEntity> queryWrapper = new QueryWrapper<CartEntity>()
+                .eq("yonghu_id", cart.getYonghuId())
+                .eq("tushu_id", cart.getTushuId())
+                .eq("buy_number", cart.getBuyNumber());
 
         logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        CartEntity cartEntity = cartService.selectOne(queryWrapper);
+        CartEntity cartEntity = cartService.getOne(queryWrapper);
         if(cartEntity==null){
             cart.setCreateTime(new Date());
             cart.setInsertTime(new Date());
-            cartService.insert(cart);
+            cartService.save(cart);
             return R.ok();
         }else {
             return R.error(511,"商品已添加到购物车");
@@ -152,28 +143,26 @@ public class CartController {
     }
 
     /**
-    * 后端修改
-    */
+     * 后端修改
+     */
     @RequestMapping("/update")
     public R update(@RequestBody CartEntity cart, HttpServletRequest request){
         logger.debug("update方法:,,Controller:{},,cart:{}",this.getClass().getName(),cart.toString());
 
         String role = String.valueOf(request.getSession().getAttribute("role"));
-//        if(false)
-//            return R.error(511,"永远不会进入");
-//        else if("用户".equals(role))
-//            cart.setYonghuId(Integer.valueOf(String.valueOf(request.getSession().getAttribute("userId"))));
+        //        if(false)
+        //            return R.error(511,"永远不会进入");
+        //        else if("用户".equals(role))
+        //            cart.setYonghuId(Integer.valueOf(String.valueOf(request.getSession().getAttribute("userId"))));
         //根据字段查询是否有相同数据
-        Wrapper<CartEntity> queryWrapper = new EntityWrapper<CartEntity>()
-            .notIn("id",cart.getId())
-            .andNew()
-            .eq("yonghu_id", cart.getYonghuId())
-            .eq("tushu_id", cart.getTushuId())
-            .eq("buy_number", cart.getBuyNumber())
-            ;
+        Wrapper<CartEntity> queryWrapper = new QueryWrapper<CartEntity>()
+                .notIn("id",cart.getId())
+                .and(i -> i.eq("yonghu_id", cart.getYonghuId())
+                        .eq("tushu_id", cart.getTushuId())
+                        .eq("buy_number", cart.getBuyNumber()));
 
         logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        CartEntity cartEntity = cartService.selectOne(queryWrapper);
+        CartEntity cartEntity = cartService.getOne(queryWrapper);
         cart.setUpdateTime(new Date());
         if(cartEntity==null){
             cartService.updateById(cart);//根据id更新
@@ -184,25 +173,24 @@ public class CartController {
     }
 
     /**
-    * 删除
-    */
+     * 删除
+     */
     @RequestMapping("/delete")
     public R delete(@RequestBody Integer[] ids){
-        logger.debug("delete:,,Controller:{},,ids:{}",this.getClass().getName(),ids.toString());
-        cartService.deleteBatchIds(Arrays.asList(ids));
+        logger.debug("delete:,,Controller:{},,ids:{}",this.getClass().getName(),Arrays.toString(ids));
+        cartService.removeByIds(Arrays.asList(ids));
         return R.ok();
     }
-
 
     /**
      * 批量上传
      */
     @RequestMapping("/batchInsert")
-    public R save( String fileName){
+    public R save(String fileName){
         logger.debug("batchInsert方法:,,Controller:{},,fileName:{}",this.getClass().getName(),fileName);
         try {
-            List<CartEntity> cartList = new ArrayList<>();//上传的东西
-            Map<String, List<String>> seachFields= new HashMap<>();//要查询的字段
+            List<CartEntity> cartList = new ArrayList<>();
+            Map<String, List<String>> seachFields= new HashMap<>();
             Date date = new Date();
             int lastIndexOf = fileName.lastIndexOf(".");
             if(lastIndexOf == -1){
@@ -212,30 +200,19 @@ public class CartController {
                 if(!".xls".equals(suffix)){
                     return R.error(511,"只支持后缀为xls的excel文件");
                 }else{
-                    URL resource = this.getClass().getClassLoader().getResource("static/upload/" + fileName);//获取文件路径
+                    URL resource = this.getClass().getClassLoader().getResource("static/upload/" + fileName);
                     File file = new File(resource.getFile());
                     if(!file.exists()){
                         return R.error(511,"找不到上传文件，请联系管理员");
                     }else{
-                        List<List<String>> dataList = PoiUtil.poiImport(file.getPath());//读取xls文件
+                        List<List<String>> dataList = PoiUtil.poiImport(file.getPath());
                         dataList.remove(0);//删除第一行，因为第一行是提示
                         for(List<String> data:dataList){
-                            //循环
                             CartEntity cartEntity = new CartEntity();
-//                            cartEntity.setYonghuId(Integer.valueOf(data.get(0)));   //所属用户 要改的
-//                            cartEntity.setTushuId(Integer.valueOf(data.get(0)));   //图书 要改的
-//                            cartEntity.setBuyNumber(Integer.valueOf(data.get(0)));   //购买数量 要改的
-//                            cartEntity.setCreateTime(date);//时间
-//                            cartEntity.setUpdateTime(new Date(data.get(0)));          //更新时间 要改的
-//                            cartEntity.setInsertTime(date);//时间
+                            //TODO: 填充 cartEntity 字段
                             cartList.add(cartEntity);
-
-
-                            //把要查询是否重复的字段放入map中
                         }
-
-                        //查询是否重复
-                        cartService.insertBatch(cartList);
+                        cartService.saveBatch(cartList);
                         return R.ok();
                     }
                 }
@@ -245,13 +222,9 @@ public class CartController {
         }
     }
 
-
-
-
-
     /**
-    * 前端列表
-    */
+     * 前端列表
+     */
     @IgnoreAuth
     @RequestMapping("/list")
     public R list(@RequestParam Map<String, Object> params, HttpServletRequest request){
@@ -263,70 +236,61 @@ public class CartController {
         }
         PageUtils page = cartService.queryPage(params);
 
-        //字典表数据转换
         List<CartView> list =(List<CartView>)page.getList();
         for(CartView c:list)
-            dictionaryService.dictionaryConvert(c, request); //修改对应字典表字段
+            dictionaryService.dictionaryConvert(c, request);
         return R.ok().put("data", page);
     }
 
     /**
-    * 前端详情
-    */
+     * 前端详情
+     */
     @RequestMapping("/detail/{id}")
     public R detail(@PathVariable("id") Long id, HttpServletRequest request){
         logger.debug("detail方法:,,Controller:{},,id:{}",this.getClass().getName(),id);
-        CartEntity cart = cartService.selectById(id);
-            if(cart !=null){
+        CartEntity cart = cartService.getById(id);
+        if(cart !=null){
+            CartView view = new CartView();
+            BeanUtils.copyProperties(cart, view);
 
-
-                //entity转view
-                CartView view = new CartView();
-                BeanUtils.copyProperties( cart , view );//把实体数据重构到view中
-
-                //级联表
-                    TushuEntity tushu = tushuService.selectById(cart.getTushuId());
-                if(tushu != null){
-                    BeanUtils.copyProperties( tushu , view ,new String[]{ "id", "createDate"});//把级联的数据添加到view中,并排除id和创建时间字段
-                    view.setTushuId(tushu.getId());
-                }
-                //级联表
-                    YonghuEntity yonghu = yonghuService.selectById(cart.getYonghuId());
-                if(yonghu != null){
-                    BeanUtils.copyProperties( yonghu , view ,new String[]{ "id", "createDate"});//把级联的数据添加到view中,并排除id和创建时间字段
-                    view.setYonghuId(yonghu.getId());
-                }
-                //修改对应字典表字段
-                dictionaryService.dictionaryConvert(view, request);
-                return R.ok().put("data", view);
-            }else {
-                return R.error(511,"查不到数据");
+            //级联表
+            TushuEntity tushu = tushuService.getById(cart.getTushuId());
+            if(tushu != null){
+                BeanUtils.copyProperties(tushu, view, new String[]{ "id", "createDate"});
+                view.setTushuId(tushu.getId());
             }
+            //级联表
+            YonghuEntity yonghu = yonghuService.getById(cart.getYonghuId());
+            if(yonghu != null){
+                BeanUtils.copyProperties(yonghu, view, new String[]{ "id", "createDate"});
+                view.setYonghuId(yonghu.getId());
+            }
+            dictionaryService.dictionaryConvert(view, request);
+            return R.ok().put("data", view);
+        }else {
+            return R.error(511,"查不到数据");
+        }
     }
 
-
     /**
-    * 前端保存
-    */
+     * 前端保存
+     */
     @RequestMapping("/add")
     public R add(@RequestBody CartEntity cart, HttpServletRequest request){
         logger.debug("add方法:,,Controller:{},,cart:{}",this.getClass().getName(),cart.toString());
-        Wrapper<CartEntity> queryWrapper = new EntityWrapper<CartEntity>()
-            .eq("yonghu_id", cart.getYonghuId())
-            .eq("tushu_id", cart.getTushuId())
-            .eq("buy_number", cart.getBuyNumber())
-            ;
+        Wrapper<CartEntity> queryWrapper = new QueryWrapper<CartEntity>()
+                .eq("yonghu_id", cart.getYonghuId())
+                .eq("tushu_id", cart.getTushuId())
+                .eq("buy_number", cart.getBuyNumber());
         logger.info("sql语句:"+queryWrapper.getSqlSegment());
-        CartEntity cartEntity = cartService.selectOne(queryWrapper);
+        CartEntity cartEntity = cartService.getOne(queryWrapper);
         if(cartEntity==null){
             cart.setCreateTime(new Date());
             cart.setInsertTime(new Date());
-        cartService.insert(cart);
+            cartService.save(cart);
             return R.ok();
         }else {
             return R.error(511,"表中有相同数据");
         }
     }
-
-
 }

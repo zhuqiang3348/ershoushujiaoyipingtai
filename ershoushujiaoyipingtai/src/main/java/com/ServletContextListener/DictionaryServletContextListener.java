@@ -1,6 +1,6 @@
 package com.ServletContextListener;
 
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.entity.DictionaryEntity;
 import com.service.DictionaryService;
 import com.thread.MyThreadMethod;
@@ -35,20 +35,18 @@ public class DictionaryServletContextListener implements ServletContextListener 
 
         logger.info("----------字典表初始化开始----------");
         DictionaryService dictionaryService = (DictionaryService)appContext.getBean("dictionaryService");
-        List<DictionaryEntity> dictionaryEntities = dictionaryService.selectList(new EntityWrapper<DictionaryEntity>());
+        List<DictionaryEntity> dictionaryEntities = dictionaryService.list(new QueryWrapper<DictionaryEntity>());
         Map<String, Map<Integer,String>> map = new HashMap<>();
         for(DictionaryEntity d :dictionaryEntities){
             Map<Integer, String> m = map.get(d.getDicCode());
-            if(m ==null || m.isEmpty()){
+            if(m == null || m.isEmpty()){
                 m = new HashMap<>();
             }
-            m.put(d.getCodeIndex(),d.getIndexName());
-            map.put(d.getDicCode(),m);
+            m.put(d.getCodeIndex(), d.getIndexName());
+            map.put(d.getDicCode(), m);
         }
         sce.getServletContext().setAttribute("dictionaryMap", map);
         logger.info("----------字典表初始化完成----------");
-
-
 
         logger.info("----------线程执行开始----------");
         if (myThreadMethod == null) {
@@ -57,5 +55,4 @@ public class DictionaryServletContextListener implements ServletContextListener 
         }
         logger.info("----------线程执行结束----------");
     }
-
 }

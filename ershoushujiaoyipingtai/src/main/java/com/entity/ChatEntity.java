@@ -1,7 +1,11 @@
 package com.entity;
 
-import com.baomidou.mybatisplus.annotations.TableId;
-import com.baomidou.mybatisplus.annotations.TableName;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -16,262 +20,111 @@ import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.beanutils.BeanUtils;
-import com.baomidou.mybatisplus.annotations.TableField;
-import com.baomidou.mybatisplus.enums.FieldFill;
-import com.baomidou.mybatisplus.enums.IdType;
 
 /**
  * 用户反馈
  *
- * @author 
+ * @author
  * @email
  */
 @TableName("chat")
 public class ChatEntity<T> implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public ChatEntity() {}
 
-	public ChatEntity() {
+    public ChatEntity(T t) {
+        try {
+            BeanUtils.copyProperties(this, t);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
 
-	}
-
-	public ChatEntity(T t) {
-		try {
-			BeanUtils.copyProperties(this, t);
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-
-    /**
-     * 主键
-     */
+    /** 主键 */
     @TableId(type = IdType.AUTO)
     @TableField(value = "id")
-
     private Integer id;
 
-
-    /**
-     * 提问用户
-     */
+    /** 提问用户 */
     @TableField(value = "yonghu_id")
-
     private Integer yonghuId;
 
-
-    /**
-     * 问题
-     */
+    /** 问题 */
     @TableField(value = "chat_issue")
-
     private String chatIssue;
 
-
-    /**
-     * 问题时间
-     */
+    /** 问题时间 */
     @JsonFormat(locale="zh", timezone="GMT+8", pattern="yyyy-MM-dd HH:mm:ss")
-	@DateTimeFormat
+    @DateTimeFormat
     @TableField(value = "issue_time")
-
     private Date issueTime;
 
-
-    /**
-     * 回复
-     */
+    /** 回复 */
     @TableField(value = "chat_reply")
-
     private String chatReply;
 
-
-    /**
-     * 回复时间
-     */
+    /** 回复时间 */
     @JsonFormat(locale="zh", timezone="GMT+8", pattern="yyyy-MM-dd HH:mm:ss")
-	@DateTimeFormat
+    @DateTimeFormat
     @TableField(value = "reply_time")
-
     private Date replyTime;
 
-
-    /**
-     * 状态
-     */
+    /** 状态 */
     @TableField(value = "zhuangtai_types")
-
     private Integer zhuangtaiTypes;
 
-
-    /**
-     * 数据类型
-     */
+    /** 数据类型 */
     @TableField(value = "chat_types")
-
     private Integer chatTypes;
 
-
-    /**
-     * 创建时间
-     */
+    /** 创建时间 */
     @JsonFormat(locale="zh", timezone="GMT+8", pattern="yyyy-MM-dd HH:mm:ss")
-	@DateTimeFormat
+    @DateTimeFormat
     @TableField(value = "insert_time",fill = FieldFill.INSERT)
-
     private Date insertTime;
 
+    // -- getters and setters below --
 
-    /**
-	 * 设置：主键
-	 */
-    public Integer getId() {
-        return id;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
 
+    public Integer getYonghuId() { return yonghuId; }
+    public void setYonghuId(Integer yonghuId) { this.yonghuId = yonghuId; }
 
-    /**
-	 * 获取：主键
-	 */
+    public String getChatIssue() { return chatIssue; }
+    public void setChatIssue(String chatIssue) { this.chatIssue = chatIssue; }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-    /**
-	 * 设置：提问用户
-	 */
-    public Integer getYonghuId() {
-        return yonghuId;
-    }
+    public Date getIssueTime() { return issueTime; }
+    public void setIssueTime(Date issueTime) { this.issueTime = issueTime; }
 
+    public String getChatReply() { return chatReply; }
+    public void setChatReply(String chatReply) { this.chatReply = chatReply; }
 
-    /**
-	 * 获取：提问用户
-	 */
+    public Date getReplyTime() { return replyTime; }
+    public void setReplyTime(Date replyTime) { this.replyTime = replyTime; }
 
-    public void setYonghuId(Integer yonghuId) {
-        this.yonghuId = yonghuId;
-    }
-    /**
-	 * 设置：问题
-	 */
-    public String getChatIssue() {
-        return chatIssue;
-    }
+    public Integer getZhuangtaiTypes() { return zhuangtaiTypes; }
+    public void setZhuangtaiTypes(Integer zhuangtaiTypes) { this.zhuangtaiTypes = zhuangtaiTypes; }
 
+    public Integer getChatTypes() { return chatTypes; }
+    public void setChatTypes(Integer chatTypes) { this.chatTypes = chatTypes; }
 
-    /**
-	 * 获取：问题
-	 */
-
-    public void setChatIssue(String chatIssue) {
-        this.chatIssue = chatIssue;
-    }
-    /**
-	 * 设置：问题时间
-	 */
-    public Date getIssueTime() {
-        return issueTime;
-    }
-
-
-    /**
-	 * 获取：问题时间
-	 */
-
-    public void setIssueTime(Date issueTime) {
-        this.issueTime = issueTime;
-    }
-    /**
-	 * 设置：回复
-	 */
-    public String getChatReply() {
-        return chatReply;
-    }
-
-
-    /**
-	 * 获取：回复
-	 */
-
-    public void setChatReply(String chatReply) {
-        this.chatReply = chatReply;
-    }
-    /**
-	 * 设置：回复时间
-	 */
-    public Date getReplyTime() {
-        return replyTime;
-    }
-
-
-    /**
-	 * 获取：回复时间
-	 */
-
-    public void setReplyTime(Date replyTime) {
-        this.replyTime = replyTime;
-    }
-    /**
-	 * 设置：状态
-	 */
-    public Integer getZhuangtaiTypes() {
-        return zhuangtaiTypes;
-    }
-
-
-    /**
-	 * 获取：状态
-	 */
-
-    public void setZhuangtaiTypes(Integer zhuangtaiTypes) {
-        this.zhuangtaiTypes = zhuangtaiTypes;
-    }
-    /**
-	 * 设置：数据类型
-	 */
-    public Integer getChatTypes() {
-        return chatTypes;
-    }
-
-
-    /**
-	 * 获取：数据类型
-	 */
-
-    public void setChatTypes(Integer chatTypes) {
-        this.chatTypes = chatTypes;
-    }
-    /**
-	 * 设置：创建时间
-	 */
-    public Date getInsertTime() {
-        return insertTime;
-    }
-
-
-    /**
-	 * 获取：创建时间
-	 */
-
-    public void setInsertTime(Date insertTime) {
-        this.insertTime = insertTime;
-    }
+    public Date getInsertTime() { return insertTime; }
+    public void setInsertTime(Date insertTime) { this.insertTime = insertTime; }
 
     @Override
     public String toString() {
         return "Chat{" +
-            "id=" + id +
-            ", yonghuId=" + yonghuId +
-            ", chatIssue=" + chatIssue +
-            ", issueTime=" + issueTime +
-            ", chatReply=" + chatReply +
-            ", replyTime=" + replyTime +
-            ", zhuangtaiTypes=" + zhuangtaiTypes +
-            ", chatTypes=" + chatTypes +
-            ", insertTime=" + insertTime +
-        "}";
+                "id=" + id +
+                ", yonghuId=" + yonghuId +
+                ", chatIssue=" + chatIssue +
+                ", issueTime=" + issueTime +
+                ", chatReply=" + chatReply +
+                ", replyTime=" + replyTime +
+                ", zhuangtaiTypes=" + zhuangtaiTypes +
+                ", chatTypes=" + chatTypes +
+                ", insertTime=" + insertTime +
+                "}";
     }
 }

@@ -1,19 +1,15 @@
 package com.service.impl;
 
-import com.utils.StringUtil;
+import com.entity.YonghuEntity;
 import org.springframework.stereotype.Service;
-import java.lang.reflect.Field;
+
 import java.util.*;
-import com.baomidou.mybatisplus.plugins.Page;
-import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 import com.utils.PageUtils;
 import com.utils.Query;
-import org.springframework.web.context.ContextLoader;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import com.dao.YonghuDao;
-import com.entity.YonghuEntity;
 import com.service.YonghuService;
 import com.entity.view.YonghuView;
 
@@ -30,10 +26,17 @@ public class YonghuServiceImpl extends ServiceImpl<YonghuDao, YonghuEntity> impl
             params.put("page","1");
             params.put("limit","10");
         }
-        Page<YonghuView> page =new Query<YonghuView>(params).getPage();
-        page.setRecords(baseMapper.selectListView(page,params));
-        return new PageUtils(page);
+        // 必须用 Entity 泛型分页对象
+        Page<YonghuEntity> entityPage = new Query<YonghuEntity>(params).getPage();
+        // 用 entityPage 查 View 列表
+        List<YonghuView> viewList = baseMapper.selectListView(entityPage, params);
+        // 组装 View 泛型分页对象
+        Page<YonghuView> viewPage = new Page<>();
+        viewPage.setRecords(viewList);
+        viewPage.setTotal(entityPage.getTotal());
+        viewPage.setSize(entityPage.getSize());
+        viewPage.setCurrent(entityPage.getCurrent());
+        viewPage.setPages(entityPage.getPages());
+        return new PageUtils(viewPage);
     }
-
-
 }

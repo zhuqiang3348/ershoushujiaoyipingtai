@@ -1,6 +1,4 @@
-
 package com.service.impl;
-
 
 import java.util.List;
 import java.util.Map;
@@ -8,15 +6,14 @@ import java.util.Map;
 import com.service.UsersService;
 import org.springframework.stereotype.Service;
 
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
-import com.baomidou.mybatisplus.mapper.Wrapper;
-import com.baomidou.mybatisplus.plugins.Page;
-import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper; // 修改处
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dao.UsersDao;
 import com.entity.UsersEntity;
 import com.utils.PageUtils;
 import com.utils.Query;
-
 
 /**
  * 系统用户
@@ -27,11 +24,11 @@ public class UsersServiceImpl extends ServiceImpl<UsersDao, UsersEntity> impleme
 
 	@Override
 	public PageUtils queryPage(Map<String, Object> params) {
-		Page<UsersEntity> page = this.selectPage(
-                new Query<UsersEntity>(params).getPage(),
-                new EntityWrapper<UsersEntity>()
-        );
-        return new PageUtils(page);
+		Page<UsersEntity> page = this.page(
+				new Query<UsersEntity>(params).getPage(),
+				new QueryWrapper<UsersEntity>()
+		);
+		return new PageUtils(page);
 	}
 
 	@Override
@@ -40,11 +37,10 @@ public class UsersServiceImpl extends ServiceImpl<UsersDao, UsersEntity> impleme
 	}
 
 	@Override
-	public PageUtils queryPage(Map<String, Object> params,
-			Wrapper<UsersEntity> wrapper) {
-		 Page<UsersEntity> page =new Query<UsersEntity>(params).getPage();
-	        page.setRecords(baseMapper.selectListView(page,wrapper));
-	    	PageUtils pageUtil = new PageUtils(page);
-	    	return pageUtil;
+	public PageUtils queryPage(Map<String, Object> params, Wrapper<UsersEntity> wrapper) {
+		Page<UsersEntity> page = new Query<UsersEntity>(params).getPage();
+		page.setRecords(baseMapper.selectListView(page, wrapper));
+		PageUtils pageUtil = new PageUtils(page);
+		return pageUtil;
 	}
 }

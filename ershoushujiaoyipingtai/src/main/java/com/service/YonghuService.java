@@ -1,10 +1,10 @@
 package com.service;
 
-import com.baomidou.mybatisplus.service.IService;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.utils.PageUtils;
-import com.entity.YonghuEntity;
+import com.entity.YonghuEntity; // 加上这一行
+
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * 用户 服务类
@@ -12,8 +12,8 @@ import javax.servlet.http.HttpServletRequest;
 public interface YonghuService extends IService<YonghuEntity> {
 
     /**
-    * @param params 查询参数
-    * @return 带分页的查询出来的数据
-    */
-     PageUtils queryPage(Map<String, Object> params);
+     * @param params 查询参数
+     * @return 带分页的查询出来的数据
+     */
+    PageUtils queryPage(Map<String, Object> params);
 }

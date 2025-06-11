@@ -4,12 +4,11 @@ import com.utils.StringUtil;
 import org.springframework.stereotype.Service;
 import java.lang.reflect.Field;
 import java.util.*;
-import com.baomidou.mybatisplus.plugins.Page;
-import com.baomidou.mybatisplus.service.impl.ServiceImpl;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.transaction.annotation.Transactional;
 import com.utils.PageUtils;
 import com.utils.Query;
-import org.springframework.web.context.ContextLoader;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import com.dao.DictionaryDao;
@@ -30,12 +29,21 @@ public class DictionaryServiceImpl extends ServiceImpl<DictionaryDao, Dictionary
             params.put("page","1");
             params.put("limit","10");
         }
-        Page<DictionaryView> page =new Query<DictionaryView>(params).getPage();
-        page.setRecords(baseMapper.selectListView(page,params));
-        return new PageUtils(page);
+        // 必须用 DictionaryEntity 泛型分页对象
+        Page<DictionaryEntity> entityPage = new Query<DictionaryEntity>(params).getPage();
+        // 查询视图
+        List<DictionaryView> viewList = baseMapper.selectListView(entityPage, params);
+        // 组装为 Page<DictionaryView>
+        Page<DictionaryView> viewPage = new Page<>();
+        viewPage.setRecords(viewList);
+        viewPage.setTotal(entityPage.getTotal());
+        viewPage.setSize(entityPage.getSize());
+        viewPage.setCurrent(entityPage.getCurrent());
+        viewPage.setPages(entityPage.getPages());
+        return new PageUtils(viewPage);
     }
 
-     /**
+    /**
      * 赋值给字典表
      * @param obj view对象
      */
@@ -57,7 +65,6 @@ public class DictionaryServiceImpl extends ServiceImpl<DictionaryDao, Dictionary
             }
 
             // 获取监听器中的字典表
-//            ServletContext servletContext = ContextLoader.getCurrentWebApplicationContext().getServletContext();
             ServletContext servletContext = request.getServletContext();
             Map<String, Map<Integer, String>> dictionaryMap= (Map<String, Map<Integer, String>>) servletContext.getAttribute("dictionaryMap");
 
@@ -118,11 +125,8 @@ public class DictionaryServiceImpl extends ServiceImpl<DictionaryDao, Dictionary
         for (Field f : fields) {
             if (fieldName.equals(f.getName())) {
                 return true;
-
             }
-
         }
-
         return false;
     }
 

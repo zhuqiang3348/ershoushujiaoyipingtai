@@ -2,27 +2,28 @@ package com.config;
 
 import java.util.Date;
 
-import org.apache.ibatis.reflection.MetaObject;
 
-import com.baomidou.mybatisplus.mapper.MetaObjectHandler;
+
+import java.util.Date;
+
+import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.stereotype.Component;
+import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 
 /**
  * 自定义填充处理器
  */
-public class MyMetaObjectHandler extends MetaObjectHandler {
+@Component
+public class MyMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void insertFill(MetaObject metaObject) {
-        this.setFieldValByName("ctime", new Date(), metaObject);
-    }
-
-    @Override
-    public boolean openUpdateFill() {
-        return false;
+        this.strictInsertFill(metaObject, "ctime", Date.class, new Date());
     }
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        // 关闭更新填充、这里不执行
+        // 如果有更新时间字段可以加自动填充
+        // this.strictUpdateFill(metaObject, "mtime", Date.class, new Date());
     }
 }
