@@ -2,7 +2,7 @@
     <div style="backgroundImage: url('/ershoushujiaoyipingtai/img/back-img-bg.jpg');background-size:cover;">
         <div class="container">
             <div class="login-form" style="backgroundColor:rgba(183, 174, 174, 0.5);borderRadius:22px">
-                <h1 class="h1" style="color:#000;fontSize:28px;">校园二手书交易平台注册</h1>
+                <h1 class="h1" style="color:#000;fontSize:28px;">二手书交易平台注册</h1>
                 <el-form class="rgs-form" label-width="120px">
                         <el-form-item label="账号" class="input">
                             <el-input v-model="ruleForm.username" autocomplete="off" placeholder="账号"  />

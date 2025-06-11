@@ -14,7 +14,7 @@
     <artifactId>ershoushujiaoyipingtai</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>ershoushujiaoyipingtai</name>
-    <description>校园二手书交易平台</description>
+    <description>二手书交易平台</description>
 
     <properties>
         <java.version>1.8</java.version>

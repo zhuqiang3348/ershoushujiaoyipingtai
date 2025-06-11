@@ -9,7 +9,7 @@ const base = {
     },
     getProjectName(){
         return {
-            projectName: "校园二手书交易平台"
+            projectName: "二手书交易平台"
         } 
     }
 }

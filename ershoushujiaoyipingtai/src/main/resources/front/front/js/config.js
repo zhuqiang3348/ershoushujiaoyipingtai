@@ -1,4 +1,4 @@
-var projectName = '校园二手书交易平台';
+var projectName = '二手书交易平台';
 /**
  * 轮播图配置
  */
