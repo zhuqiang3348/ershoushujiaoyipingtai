@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 
 /**
- * 自定义填充处理器
+ * 自定义填充处理器，自动填充字段
  */
 @Component
 public class MyMetaObjectHandler implements MetaObjectHandler {

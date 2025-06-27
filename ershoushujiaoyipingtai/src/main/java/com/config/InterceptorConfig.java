@@ -24,6 +24,7 @@ public class InterceptorConfig extends WebMvcConfigurationSupport{
 	
 	/**
 	 * springboot 2.0配置WebMvcConfigurationSupport之后，会导致默认配置被覆盖，要访问静态资源需要重写addResourceHandlers方法
+	 * 拦截器设置，控制哪些请求需要登录/权限
 	 */
 	@Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
